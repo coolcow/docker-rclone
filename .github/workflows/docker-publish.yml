@@ -13,7 +13,7 @@ jobs:
       contents: read
       packages: write
       id-token: write
-    uses: coolcow/workflows/.github/workflows/build-and-publish.yml@v1.1.1
+    uses: coolcow/workflows/.github/workflows/build-and-publish.yml@v1.1.2
     with:
       image_name: 'rclone'
       build_context: 'build'
