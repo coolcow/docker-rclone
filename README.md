@@ -1,106 +1,88 @@
 # ghcr.io/coolcow/rclone
 
-Simple and minimal Alpine-based Docker image for [Rclone](https://rclone.org/).
+A flexible, multi-purpose, and minimal Alpine-based Docker image for [Rclone](https://rclone.org/).
+
+This image supports two modes: direct `rclone` command execution (default) and a cron-based scheduler for running tasks automatically. It runs as a non-root user and is highly configurable through both runtime environment variables and build-time arguments.
 
 ---
 
-## Overview
+## Recommended Usage with `docker-compose`
 
-Rclone is a command-line program to sync files and directories to and from cloud storage.
+This example demonstrates both modes side-by-side.
 
----
+**`docker-compose.yml`**
+```yaml
+version: "3.7"
+services:
+  # Example 1: Running a one-off rclone command
+  rclone-command:
+    image: ghcr.io/coolcow/rclone:latest
+    # The command to run is passed here
+    command: sync /data MyRemote:backup --progress
+    environment:
+      - PUID=1000
+      - PGID=1000
+    volumes:
+      - ./rclone.conf:/home/.config/rclone/rclone.conf:ro
+      - /path/to/data:/data
 
-## Features
-
-- Based on Alpine Linux for a small footprint
-- Runs as non-root by default (user: `rclone`)
-- Secure execution via [docker-entrypoints](https://github.com/coolcow/docker-entrypoints)
-- Configurable user/group IDs to avoid permission issues on mounted volumes
-
----
-
-## Usage
-
-### Quick Start
-
-```sh
-docker run --rm ghcr.io/coolcow/rclone
+  # Example 2: Running as a cron scheduler
+  rclone-cron:
+    image: ghcr.io/coolcow/rclone:latest
+    restart: unless-stopped
+    environment:
+      - RUN_MODE=cron
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Berlin
+    volumes:
+      - ./rclone.conf:/home/.config/rclone/rclone.conf:ro
+      - ./crontab:/crontab:ro
+      - /path/to/data:/data # Mount data for the cron job
+      - /path/to/logs:/logs # Mount a log volume for cron output
 ```
 
-Default runtime behavior:
-
-- **ENTRYPOINT:** `/entrypoint_su-exec.sh rclone`
-- **CMD:** `--help`
-
-### Environment Variables
-
-| Variable | Default | Description |
-|---|---:|---|
-| `PUID` | 1000 | User ID to run rclone as |
-| `PGID` | 1000 | Group ID to run rclone as |
-| `ENTRYPOINT_USER` | rclone | Internal: user for entrypoint script |
-| `ENTRYPOINT_GROUP` | rclone | Internal: group for entrypoint script |
-| `ENTRYPOINT_HOME` | /home | Internal: working home directory |
-
-Use `PUID` and `PGID` to run rclone with your host user's uid/gid and avoid permission issues.
-
-### Create or Edit Rclone Config
-
-```sh
-docker run -it --rm \
-  -e PUID=$(id -u) \
-  -e PGID=$(id -g) \
-  -v <PATH_TO_YOUR_CONF>:/home/.rclone.conf \
-  ghcr.io/coolcow/rclone \
-    config
-```
-
-Replace `<PATH_TO_YOUR_CONF>` with the file path of your rclone configuration file.
-
-### Sync Data to Cloud Storage
-
-```sh
-docker run -it --rm \
-  -e PUID=$(id -u) \
-  -e PGID=$(id -g) \
-  -v <PATH_TO_YOUR_CONF>:/home/.rclone.conf \
-  -v <PATH_TO_YOUR_DATA>:/data \
-  ghcr.io/coolcow/rclone \
-    sync /data cloudstorage:
-```
-
-Replace `<PATH_TO_YOUR_CONF>` with your config file path and `<PATH_TO_YOUR_DATA>` with your data directory.
-
-### Run Sync as Cron Daemon
-
-Take a look at [ghcr.io/coolcow/rclone-cron](https://ghcr.io/coolcow/rclone-cron), an image based on this one that uses `/entrypoint_crond.sh`.
-
-Example crontab entry (every two hours):
-
+**Example `crontab` file:**
 ```crontab
-0 */2 * * * flock -n ~/rclone.lock rclone sync --log-file /logs/rclone.$(date +%Y%m%d_%H%M%S).log /data cloudstorage: &
-```
-
-Run command:
-
-```sh
-docker run -d \
-  -e PUID=$(id -u) \
-  -e PGID=$(id -g) \
-  -e CROND_CRONTAB=/crontab \
-  -v <PATH_TO_YOUR_CONF>:/home/.rclone.conf \
-  -v <PATH_TO_YOUR_DATA>:/data \
-  -v <PATH_TO_YOUR_CRONTAB>:/crontab \
-  -v <PATH_TO_YOUR_LOGS>:/logs \
-  --entrypoint=/entrypoint_crond.sh \
-  ghcr.io/coolcow/rclone \
-    -f
+# Run a sync every day at 2:00 AM
+0 2 * * *    flock -n /tmp/rclone.lock rclone sync /data MyRemote:backup --log-file /logs/rclone-sync.log
 ```
 
 ---
 
-## References
+## Configuration
 
-- [Rclone Documentation](https://rclone.org/)
-- [Rclone Command List](https://rclone.org/commands/)
-- [docker-entrypoints](https://github.com/coolcow/docker-entrypoints)
+### Runtime Environment Variables
+
+| Variable        | Default   | Description                                                        |
+| --------------- | --------- | ------------------------------------------------------------------ |
+| `RUN_MODE`      | `rclone`  | Set to `cron` to activate the cron scheduler mode.                 |
+| `PUID`          | `1000`    | The user ID to run the `rclone` process as.                        |
+| `PGID`          | `1000`    | The group ID to run the `rclone` process as.                       |
+| `TZ`            | `Etc/UTC` | Timezone for the container, important for correct cron scheduling. |
+| `CROND_CRONTAB` | `/crontab`| Path inside the container for the crontab file.                    |
+
+### Build-Time Arguments
+
+Customize the image at build time with `docker build --build-arg <KEY>=<VALUE>`.
+
+| Argument              | Default   | Description                                  |
+| --------------------- | --------- | -------------------------------------------- |
+| `ALPINE_VERSION`      | `3.19.1`  | Version of the Alpine base image.            |
+| `RCLONE_VERSION`      | `v1.73.0` | Version of Rclone to install.                |
+| `ENTRYPOINTS_VERSION` | `v2.0.0`  | Version of the `coolcow/entrypoints` image.  |
+
+---
+
+## Local Testing
+
+Run the built-in smoke tests locally.
+
+1.  `docker build -t ghcr.io/coolcow/rclone:local-test-build -f build/Dockerfile build`
+2.  `docker build --build-arg APP_IMAGE=ghcr.io/coolcow/rclone:local-test-build -f build/Dockerfile.test build`
+
+---
+
+## Deprecation Notice
+
+This image replaces the now-obsolete `ghcr.io/coolcow/rclone-cron` image. Migrate by using the `RUN_MODE=cron` environment variable.

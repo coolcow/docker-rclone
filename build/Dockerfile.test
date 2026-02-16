@@ -1,0 +1,28 @@
+# This Dockerfile is for running smoke tests on the rclone application image.
+
+# The application image to test is passed as a build argument.
+# The default value is for local testing.
+ARG APP_IMAGE=ghcr.io/coolcow/rclone:latest
+FROM ${APP_IMAGE}
+
+# Run smoke tests directly inside the application image.
+# If any command fails, the build will fail, indicating a problem.
+RUN \
+    # Test 1: Verify that key binaries exist and are executable.
+    # This checks if the build process and script copying worked.
+    test -x /usr/bin/rclone && \
+    test -x /usr/local/bin/entrypoint.sh && \
+    test -x /usr/local/bin/entrypoint_su-exec.sh && \
+    test -x /usr/local/bin/entrypoint_crond.sh && \
+    test -x /usr/local/bin/create_user_group_home.sh && \
+    \
+    # Test 2: Verify the rclone binary can be executed and shows its version.
+    # This is an excellent smoke test to catch missing shared libraries or other runtime issues.
+    echo "Checking rclone version..." && \
+    rclone --version && \
+    \
+    # Test 3: Sanity-check the content of the entrypoint scripts.
+    # This ensures the correct scripts were copied.
+    grep -q 'su-exec' /usr/local/bin/entrypoint_su-exec.sh && \
+    grep -q 'case "${RUN_MODE}" in' /usr/local/bin/entrypoint.sh
+
