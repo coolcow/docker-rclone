@@ -17,6 +17,6 @@ jobs:
     with:
       image_name: 'rclone'
       build_context: 'build'
-      dockerfile_path: 'Dockerfile'
-      test_dockerfile_path: 'Dockerfile.test'
+      dockerfile_path: 'build/Dockerfile'
+      test_dockerfile_path: 'build/Dockerfile.test'
     secrets: inherit
