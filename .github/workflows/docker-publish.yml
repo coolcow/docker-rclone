@@ -16,5 +16,7 @@ jobs:
     uses: coolcow/workflows/.github/workflows/build-and-publish.yml@v1.1.0
     with:
       image_name: 'rclone'
-      test_dockerfile_path: 'build/Dockerfile.test'
+      build_context: 'build'
+      dockerfile_path: 'Dockerfile'
+      test_dockerfile_path: 'Dockerfile.test'
     secrets: inherit
