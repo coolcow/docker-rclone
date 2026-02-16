@@ -24,5 +24,5 @@ RUN \
     # Test 3: Sanity-check the content of the entrypoint scripts.
     # This ensures the correct scripts were copied.
     grep -q 'su-exec' /usr/local/bin/entrypoint_su-exec.sh && \
-    grep -q 'case "${RUN_MODE}" in' /usr/local/bin/entrypoint.sh
+    grep -q 'case "\${RUN_MODE}" in' /usr/local/bin/entrypoint.sh
 
