@@ -1,5 +1,5 @@
 # Global build arguments
-ARG ENTRYPOINTS_VERSION=2.0.0
+ARG ENTRYPOINTS_VERSION=2.2.0
 ARG ALPINE_VERSION=3.23.3
 
 # Stage to fetch scripts from the versioned entrypoints asset image
@@ -16,9 +16,13 @@ ARG RCLONE_DOWNLOAD=http://downloads.rclone.org
 ARG ARCH=amd64
 
 # Runtime environment variables needed by the entrypoint scripts.
-ENV ENTRYPOINT_USER=rclone \
-    ENTRYPOINT_GROUP=rclone \
-    ENTRYPOINT_HOME=/home \
+ENV RCLONE_UID=1000 \
+    RCLONE_GID=1000 \
+    RCLONE_REMAP_IDS=1 \
+    RCLONE_USER=rclone \
+    RCLONE_GROUP=rclone \
+    RCLONE_HOME=/home \
+    RCLONE_SHELL=/bin/sh \
     CROND_CRONTAB=/crontab
 
 # install dependencies for rclone, cron, and script execution
@@ -35,7 +39,7 @@ RUN apk --no-cache --update add \
     && touch $CROND_CRONTAB
 
 # Copy required scripts from the entrypoints asset image
-COPY --from=entrypoints /assets/create_user_group_home.sh /usr/local/bin/
+COPY --from=entrypoints /assets/ensure_user_group_home.sh /usr/local/bin/
 COPY --from=entrypoints /assets/entrypoint_su-exec.sh /usr/local/bin/
 COPY --from=entrypoints /assets/entrypoint_crond.sh /usr/local/bin/
 
@@ -52,9 +56,9 @@ RUN cd /tmp \
     && mv /tmp/rclone-*-linux-${ARCH}/rclone /usr/bin \
     && rm -rf /tmp/*
 
-VOLUME $ENTRYPOINT_HOME
+VOLUME $RCLONE_HOME
 
-WORKDIR $ENTRYPOINT_HOME
+WORKDIR $RCLONE_HOME
 
 # The smart entrypoint decides whether to run rclone directly or start crond.
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

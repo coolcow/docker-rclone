@@ -20,8 +20,8 @@ services:
     # The command to run is passed here
     command: sync /data MyRemote:backup --progress
     environment:
-      - PUID=1000
-      - PGID=1000
+      - RCLONE_UID=1000
+      - RCLONE_GID=1000
     volumes:
       - ./rclone.conf:/home/.config/rclone/rclone.conf:ro
       - /path/to/data:/data
@@ -32,8 +32,8 @@ services:
     restart: unless-stopped
     environment:
       - RUN_MODE=cron
-      - PUID=1000
-      - PGID=1000
+      - RCLONE_UID=1000
+      - RCLONE_GID=1000
       - TZ=Europe/Berlin
     volumes:
       - ./rclone.conf:/home/.config/rclone/rclone.conf:ro
@@ -54,13 +54,20 @@ services:
 
 ### Runtime Environment Variables
 
-| Variable        | Default   | Description                                                        |
-| --------------- | --------- | ------------------------------------------------------------------ |
-| `RUN_MODE`      | `rclone`  | Set to `cron` to activate the cron scheduler mode.                 |
-| `PUID`          | `1000`    | The user ID to run the `rclone` process as.                        |
-| `PGID`          | `1000`    | The group ID to run the `rclone` process as.                       |
-| `TZ`            | `Etc/UTC` | Timezone for the container, important for correct cron scheduling. |
-| `CROND_CRONTAB` | `/crontab`| Path inside the container for the crontab file.                    |
+| Variable           | Default    | Target              | Description                                                        |
+| ------------------ | ---------- | ------------------- | ------------------------------------------------------------------ |
+| `RCLONE_UID`       | `1000`     | `TARGET_UID`        | The user ID to run `rclone` as.                                   |
+| `RCLONE_GID`       | `1000`     | `TARGET_GID`        | The group ID to run `rclone` as.                                  |
+| `RCLONE_REMAP_IDS` | `1`        | `TARGET_REMAP_IDS`  | Set `0` to disable remapping conflicting UID/GID entries.         |
+| `RCLONE_USER`      | `rclone`   | `TARGET_USER`       | The runtime user name inside the container.                        |
+| `RCLONE_GROUP`     | `rclone`   | `TARGET_GROUP`      | The runtime group name inside the container.                       |
+| `RCLONE_HOME`      | `/home`    | `TARGET_HOME`       | Home directory used by `rclone` and as default working directory. |
+| `RCLONE_SHELL`     | `/bin/sh`  | `TARGET_SHELL`      | Login shell for the runtime user.                                 |
+| `RUN_MODE`         | `rclone`   | —                   | Set to `cron` to activate the cron scheduler mode.                |
+| `CROND_CRONTAB`    | `/crontab` | —                   | Path inside the container for the crontab file.                    |
+| `TZ`               | `Etc/UTC`  | —                   | Timezone for the container, important for correct cron scheduling. |
+
+`Target` shows the corresponding variable used by `coolcow/entrypoints`; `—` means no mapping.
 
 ### Build-Time Arguments
 
@@ -68,9 +75,23 @@ Customize the image at build time with `docker build --build-arg <KEY>=<VALUE>`.
 
 | Argument              | Default   | Description                                  |
 | --------------------- | --------- | -------------------------------------------- |
-| `ALPINE_VERSION`      | `3.19.1`  | Version of the Alpine base image.            |
-| `RCLONE_VERSION`      | `v1.73.0` | Version of Rclone to install.                |
-| `ENTRYPOINTS_VERSION` | `v2.0.0`  | Version of the `coolcow/entrypoints` image.  |
+| `RCLONE_VERSION`      | `1.73.0`  | Version of Rclone to install.                |
+| `ALPINE_VERSION`      | `3.23.3`  | Version of the Alpine base image.            |
+| `ENTRYPOINTS_VERSION` | `2.2.0`   | Version of the `coolcow/entrypoints` image.  |
+
+---
+
+## Migration Notes
+
+Since `v1.2.0`, runtime user/group environment variables were renamed to image-specific `RCLONE_*` names.
+
+- `PUID` → `RCLONE_UID`
+- `PGID` → `RCLONE_GID`
+- `ENTRYPOINT_USER` → `RCLONE_USER`
+- `ENTRYPOINT_GROUP` → `RCLONE_GROUP`
+- `ENTRYPOINT_HOME` → `RCLONE_HOME`
+
+Update your `docker run` / `docker-compose` environment configuration accordingly when upgrading from older tags.
 
 ---
 
