@@ -23,7 +23,7 @@ services:
       - RCLONE_UID=1000
       - RCLONE_GID=1000
     volumes:
-      - ./rclone.conf:/home/.config/rclone/rclone.conf:ro
+      - ./rclone.conf:/home/rclone/.config/rclone/rclone.conf:ro
       - /path/to/data:/data
 
   # Example 2: Running as a cron scheduler
@@ -36,7 +36,7 @@ services:
       - RCLONE_GID=1000
       - TZ=Europe/Berlin
     volumes:
-      - ./rclone.conf:/home/.config/rclone/rclone.conf:ro
+      - ./rclone.conf:/home/rclone/.config/rclone/rclone.conf:ro
       - ./crontab:/crontab:ro
       - /path/to/data:/data # Mount data for the cron job
       - /path/to/logs:/logs # Mount a log volume for cron output
@@ -61,7 +61,7 @@ services:
 | `RCLONE_REMAP_IDS` | `1`        | `TARGET_REMAP_IDS`  | Set `0` to disable remapping conflicting UID/GID entries.         |
 | `RCLONE_USER`      | `rclone`   | `TARGET_USER`       | The runtime user name inside the container.                        |
 | `RCLONE_GROUP`     | `rclone`   | `TARGET_GROUP`      | The runtime group name inside the container.                       |
-| `RCLONE_HOME`      | `/home`    | `TARGET_HOME`       | Home directory used by `rclone` and as default working directory. |
+| `RCLONE_HOME`      | `/home/rclone` | `TARGET_HOME`   | Home directory used by `rclone` and as default working directory. |
 | `RCLONE_SHELL`     | `/bin/sh`  | `TARGET_SHELL`      | Login shell for the runtime user.                                 |
 | `RUN_MODE`         | `rclone`   | —                   | Set to `cron` to activate the cron scheduler mode.                |
 | `CROND_CRONTAB`    | `/crontab` | —                   | Path inside the container for the crontab file.                    |

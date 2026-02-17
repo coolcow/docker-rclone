@@ -16,12 +16,15 @@ RUN \
     test -x /usr/local/bin/entrypoint_crond.sh && \
     test -x /usr/local/bin/ensure_user_group_home.sh && \
     \
-    # Test 2: Verify the rclone binary can be executed and shows its version.
+    # Test 2: Verify image defaults for runtime environment.
+    test "$RCLONE_HOME" = '/home/rclone' && \
+    \
+    # Test 3: Verify the rclone binary can be executed and shows its version.
     # This is an excellent smoke test to catch missing shared libraries or other runtime issues.
     echo "Checking rclone version..." && \
     rclone --version && \
     \
-    # Test 3: Sanity-check the content of the entrypoint scripts.
+    # Test 4: Sanity-check the content of the entrypoint scripts.
     # This ensures the correct scripts were copied.
     grep -q 'su-exec' /usr/local/bin/entrypoint_su-exec.sh && \
     grep -q 'case "\${RUN_MODE}" in' /usr/local/bin/entrypoint.sh

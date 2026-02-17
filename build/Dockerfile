@@ -21,7 +21,7 @@ ENV RCLONE_UID=1000 \
     RCLONE_REMAP_IDS=1 \
     RCLONE_USER=rclone \
     RCLONE_GROUP=rclone \
-    RCLONE_HOME=/home \
+    RCLONE_HOME=/home/rclone \
     RCLONE_SHELL=/bin/sh \
     CROND_CRONTAB=/crontab
 
